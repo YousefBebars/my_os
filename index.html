@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Y. — Daily OS</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#07080c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Y. OS">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:#07080c; --s1:#0d0f17; --s2:#121520; --s3:#171b28;
+  --border:#1e2235; --border2:#262d45;
+  --blue:#4f7cff; --indigo:#7c5cff; --violet:#b06dff; --pink:#f059b0;
+  --green:#00e5a0; --teal:#00c9a7; --gold:#ffb020; --red:#ff4d6d;
+  --text:#eaeef8; --text2:#7a84a8; --muted:#404868;
+  --font:'Inter',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; font-family:var(--font); }
+body { background:var(--bg); color:var(--text); display:flex; flex-direction:column; }
+body::before { content:''; position:fixed; width:500px; height:500px; border-radius:50%;
+  background:radial-gradient(circle,var(--blue),transparent 70%); top:-200px; left:-200px;
+  filter:blur(100px); opacity:.05; pointer-events:none; z-index:-1; }
+
+.top-nav { display:flex; align-items:center; padding:0 16px; height:52px; flex-shrink:0;
+  background:#0d0f17f0; backdrop-filter:blur(20px); border-bottom:1px solid var(--border); z-index:1000; position:relative; }
+.nav-logo { font-family:var(--mono); font-size:15px; font-weight:600; margin-right:16px;
+  background:linear-gradient(135deg,var(--blue),var(--violet)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.nav-links { display:flex; gap:2px; flex:1; overflow-x:auto; scrollbar-width:none; }
+.nav-links::-webkit-scrollbar{display:none;}
+.nl { padding:7px 14px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;
+  color:var(--muted); border:none; background:none; font-family:var(--font); transition:all .2s; white-space:nowrap; }
+.nl:hover { color:var(--text2); background:var(--s2); }
+.nl.active { color:var(--blue); background:#4f7cff12; }
+.nav-date { font-family:var(--mono); font-size:11px; color:var(--muted); flex-shrink:0; }
+
+.bot-nav { display:none; position:fixed; bottom:0; left:0; right:0; z-index:1000;
+  background:#0d0f17f5; backdrop-filter:blur(20px); border-top:1px solid var(--border); height:58px;
+  align-items:center; padding:0 2px; overflow-x:auto; scrollbar-width:none; }
+.bot-nav::-webkit-scrollbar{display:none;}
+.bn { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 9px; border-radius:8px;
+  cursor:pointer; color:var(--muted); border:none; background:none; font-family:var(--font); min-width:52px; flex-shrink:0; }
+.bn-i { font-size:17px; } .bn-l { font-size:9px; font-weight:700; }
+.bn.active { color:var(--blue); }
+
+.pages { flex:1; overflow:hidden; position:relative; }
+.page { display:none; height:100%; overflow-y:auto; padding:18px 18px 80px; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+.page::-webkit-scrollbar { width:3px; } .page::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+.page.active { display:block; }
+.inner { max-width:680px; margin:0 auto; }
+
+.card { background:linear-gradient(135deg,var(--s1),var(--s2)); border:1px solid var(--border);
+  border-radius:14px; padding:18px; margin-bottom:14px; }
+.clabel { font-family:var(--mono); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+
+.inp { background:var(--s3); border:1px solid var(--border2); border-radius:10px; padding:11px 13px;
+  color:var(--text); font-size:13px; font-family:var(--font); outline:none; width:100%; font-weight:500; }
+.inp:focus { border-color:#4f7cff70; box-shadow:0 0 0 3px #4f7cff0d; }
+.inp::placeholder { color:var(--muted); font-weight:400; }
+textarea.inp { resize:vertical; line-height:1.7; }
+.sel { background:var(--s3); border:1px solid var(--border2); border-radius:10px; padding:11px 10px;
+  color:var(--text); font-size:12px; font-family:var(--font); outline:none; cursor:pointer; font-weight:700; }
+.row { display:flex; gap:7px; margin-bottom:9px; }
+.btn { padding:11px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer;
+  border:none; font-family:var(--font); flex-shrink:0; transition:all .15s; }
+.btn:active { transform:scale(.97); }
+.b-blue { background:linear-gradient(135deg,var(--blue),var(--indigo)); color:#fff; }
+.b-violet { background:linear-gradient(135deg,var(--violet),var(--pink)); color:#fff; }
+.b-ghost { background:var(--s3); color:var(--text2); border:1px solid var(--border2); }
+
+/* task/todo items (shared style for today + week) */
+.titem { display:flex; align-items:center; gap:9px; padding:11px 13px; background:var(--s3);
+  border-radius:10px; border-left:3px solid var(--border2); margin-bottom:7px; animation:fi .2s ease; }
+@keyframes fi { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+.tchk { width:19px; height:19px; border:2px solid var(--border2); border-radius:5px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.tchk.done { background:linear-gradient(135deg,var(--green),var(--teal)); border-color:var(--green); }
+.tchk.done::after { content:'✓'; font-size:11px; color:#07080c; font-weight:900; }
+.ttxt { flex:1; font-size:13px; font-weight:600; }
+.ttxt.done { text-decoration:line-through; color:var(--muted); }
+.tdel { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:2px 6px; }
+.tdel:hover { color:var(--red); }
+.empty { text-align:center; padding:26px 12px; color:var(--muted); font-size:13px; line-height:2; }
+.empty-ic { font-size:26px; margin-bottom:6px; display:block; opacity:.3; }
+
+/* week plan */
+.wk-nav { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.wk-range { flex:1; text-align:center; font-size:13px; font-weight:700; color:var(--text2); }
+.goalbox { background:linear-gradient(135deg,#b06dff08,#f059b005); border:1px solid #b06dff18;
+  border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+.goalbox .glabel { font-size:9px; color:var(--violet); font-family:var(--mono); letter-spacing:2px; margin-bottom:8px; }
+
+.wtag { font-size:10px; padding:2px 8px; border-radius:5px; font-weight:700; flex-shrink:0; }
+
+.pgwrap { background:var(--s3); border-radius:99px; height:5px; overflow:hidden; margin-top:12px; }
+.pgfill { height:100%; background:linear-gradient(90deg,var(--blue),var(--violet),var(--green)); border-radius:99px; transition:width .5s; }
+.pgrow { display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:6px; }
+
+/* habits */
+.hgrid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.hi { display:flex; align-items:center; gap:9px; padding:11px 12px; background:var(--s3); border-radius:10px;
+  cursor:pointer; border:1px solid transparent; transition:all .2s; user-select:none; }
+.hi.done { border-color:#00e5a040; background:linear-gradient(135deg,#00e5a00d,#00c9a708); }
+.hi-ic { font-size:16px; flex-shrink:0; }
+.hi-lb { font-size:12px; font-weight:600; flex:1; line-height:1.3; }
+.hi-bx { width:18px; height:18px; border:2px solid var(--border2); border-radius:5px; display:flex;
+  align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; }
+.hi.done .hi-bx { background:linear-gradient(135deg,var(--green),var(--teal)); border-color:var(--green); }
+.hi.done .hi-bx::after { content:'✓'; font-size:11px; color:#07080c; font-weight:900; }
+@media(max-width:500px){ .hgrid{grid-template-columns:1fr;} }
+
+.whtbl { width:100%; border-collapse:separate; border-spacing:3px; margin-top:4px; }
+.whcell { width:22px; height:22px; border-radius:5px; margin:auto; background:var(--border);
+  display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; }
+.whcell.done { background:linear-gradient(135deg,var(--green),var(--teal)); color:#07080c; }
+.whstats { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; }
+.wstat { background:var(--s3); border-radius:10px; padding:9px; text-align:center; border:1px solid var(--border); }
+.wstat-p { font-size:14px; font-weight:800; margin-bottom:2px; }
+.wstat-l { font-size:9px; color:var(--text2); line-height:1.3; }
+
+/* journal */
+.jtabs { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+.jtab { padding:7px 15px; border-radius:9px; font-size:12px; font-weight:700; cursor:pointer;
+  border:1px solid var(--border); background:var(--s3); color:var(--muted); font-family:var(--font); }
+.jtab.active { background:linear-gradient(135deg,var(--violet),var(--pink)); border-color:transparent; color:#fff; }
+.jpage { display:none; } .jpage.on { display:block; }
+.pbox { background:linear-gradient(135deg,#b06dff08,#f059b005); border:1px solid #b06dff18;
+  border-radius:10px; padding:12px 14px; margin-bottom:12px; }
+.plabel { font-size:9px; color:var(--violet); font-family:var(--mono); letter-spacing:2px; margin-bottom:8px; }
+.pq { font-size:12px; color:var(--text2); padding-left:10px; border-left:2px solid var(--violet); line-height:1.6; margin-bottom:6px; font-weight:500; }
+.pq:last-child { margin-bottom:0; }
+.jentry { background:var(--s3); border:1px solid var(--border); border-radius:10px; padding:13px;
+  border-left:3px solid var(--violet); margin-bottom:9px; animation:fi .2s ease; }
+.jhead { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.jdate { font-family:var(--mono); font-size:10px; color:var(--muted); }
+.jtype { font-size:10px; padding:2px 8px; border-radius:5px; font-weight:700; background:#b06dff15; color:var(--violet); }
+.jdel { margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; }
+.jdel:hover { color:var(--red); }
+.jtext { font-size:13px; color:var(--text2); line-height:1.8; white-space:pre-wrap; }
+.svok { font-size:11px; color:var(--green); display:none; font-family:var(--mono); font-weight:700; }
+
+.bkitem { display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--s3);
+  border-radius:10px; border:1px solid var(--border); margin-bottom:8px; }
+
+/* gym */
+.exb { border:1px solid var(--border2); border-radius:10px; padding:12px; margin-bottom:10px; background:var(--s3); }
+.exb-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; }
+.exb-head .inp { margin-bottom:0; }
+.setrow { display:grid; grid-template-columns:22px 1fr 1fr 1fr auto; gap:6px; align-items:center; margin-bottom:6px; }
+.setrow .inp { margin-bottom:0; padding:8px 6px; font-size:12px; text-align:center; }
+.setrow .sidx { font-size:11px; color:var(--muted); text-align:center; }
+.setrow button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; }
+.prbadge { display:inline-block; background:#ffb02015; color:var(--gold); font-size:10px; font-weight:800;
+  padding:2px 7px; border-radius:5px; margin-left:6px; }
+.exlist-item { display:flex; justify-content:space-between; align-items:center; padding:11px 4px;
+  border-bottom:1px solid var(--border); cursor:pointer; }
+.exlist-item:last-child { border-bottom:none; }
+.exlist-item .en { font-size:13px; font-weight:700; }
+.exlist-item .em { font-size:10.5px; color:var(--muted); margin-top:2px; }
+.exlist-item .eb { font-family:var(--mono); font-size:13px; color:var(--gold); font-weight:700; }
+.exhist { display:none; padding:8px 4px 10px; }
+.exhist.on { display:block; }
+.exhist table { width:100%; border-collapse:collapse; font-size:11.5px; }
+.exhist th { text-align:left; color:var(--muted); font-weight:600; padding:4px 3px; border-bottom:1px solid var(--border); }
+.exhist td { padding:4px 3px; border-bottom:1px solid var(--border); color:var(--text2); }
+
+/* measurable habits */
+.mhrow { display:grid; grid-template-columns:1fr 78px 52px; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--border); }
+.mhrow:last-child { border-bottom:none; }
+.mhrow .ml { font-size:12.5px; font-weight:600; }
+.mhrow .mt { font-size:10px; color:var(--muted); margin-top:1px; }
+.mhrow .inp { margin-bottom:0; padding:7px 6px; text-align:center; font-size:12.5px; }
+.mhrow .mu { font-size:10.5px; color:var(--muted); text-align:center; }
+.mhrow .mfill { grid-column:1/-1; height:3px; background:var(--s3); border-radius:2px; overflow:hidden; margin-top:1px; }
+.mhrow .mfill-b { height:100%; background:var(--blue); width:0%; transition:width .2s; }
+.scorebig { font-family:var(--mono); font-size:38px; font-weight:800; }
+
+/* weekly review */
+.revbox { background:linear-gradient(135deg,#4f7cff08,#7c5cff05); border:1px solid #4f7cff18; border-radius:10px; padding:14px; margin-top:12px; }
+.revline { font-size:12.5px; color:var(--text2); padding:4px 0; line-height:1.6; }
+.revline b { color:var(--text); }
+
+/* gamification */
+.xpbar-wrap { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+.lvl-badge { font-family:var(--mono); font-weight:800; font-size:13px; color:#07080c;
+  background:linear-gradient(135deg,var(--gold),#ffcf6b); padding:4px 10px; border-radius:8px; flex-shrink:0; }
+.xpwrap { flex:1; background:var(--s3); border-radius:99px; height:9px; overflow:hidden; position:relative; }
+.xpfill { height:100%; background:linear-gradient(90deg,var(--blue),var(--violet)); border-radius:99px; transition:width .5s; }
+.xptxt { font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:5px; text-align:right; }
+.streakbox { display:flex; align-items:center; gap:8px; background:var(--s3); border-radius:10px; padding:12px 14px; margin-top:10px; }
+.streakflame { font-size:26px; }
+.streaknum { font-family:var(--mono); font-size:22px; font-weight:800; color:var(--gold); }
+.badgegrid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px; }
+.badge { background:var(--s3); border:1px solid var(--border2); border-radius:10px; padding:12px 8px; text-align:center; opacity:0.28; }
+.badge.unlocked { opacity:1; border-color:#ffb02040; background:linear-gradient(135deg,#ffb02010,#ff4d6d08); }
+.badge .bi { font-size:22px; display:block; margin-bottom:4px; }
+.badge .bl { font-size:9.5px; font-weight:700; color:var(--text2); line-height:1.3; }
+.toast-xp { position:fixed; top:60px; left:50%; transform:translateX(-50%) translateY(-10px); z-index:3000;
+  background:linear-gradient(135deg,var(--gold),#ffcf6b); color:#07080c; font-family:var(--mono); font-weight:800;
+  font-size:12px; padding:6px 14px; border-radius:99px; opacity:0; transition:all .3s; pointer-events:none; }
+.toast-xp.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+.sbanner { position:fixed; top:55px; left:0; right:0; z-index:2000; display:flex; align-items:center;
+  justify-content:center; gap:8px; padding:7px 16px; font-size:12px; font-weight:700; transition:all .3s;
+  transform:translateY(-120%); opacity:0; font-family:var(--font); pointer-events:none; }
+.sbanner.show { transform:translateY(0); opacity:1; }
+.sbanner.saved { background:linear-gradient(135deg,#00c9a795,#00e5a095); color:#07080c; backdrop-filter:blur(10px); }
+
+@media(max-width:600px){
+  .top-nav .nav-links,.nav-date{display:none;}
+  .bot-nav{display:flex;}
+  .page{padding:14px 12px 74px;}
+}
+</style>
+</head>
+<body>
+
+<div class="sbanner" id="sbanner"><span>✓ Saved</span></div>
+
+<nav class="top-nav">
+  <div class="nav-logo">Y.</div>
+  <div class="nav-links">
+    <button class="nl active" onclick="goPage('today')">✅ Today</button>
+    <button class="nl" onclick="goPage('week')">🗓️ Week</button>
+    <button class="nl" onclick="goPage('gym')">🏋️ Gym</button>
+    <button class="nl" onclick="goPage('habits')">🔁 Habits</button>
+    <button class="nl" onclick="goPage('journal')">📓 Journal</button>
+    <button class="nl" onclick="goPage('progress')">🏆 Progress</button>
+    <button class="nl" onclick="goPage('backup')">💾 Backup</button>
+  </div>
+  <div class="nav-date" id="navDate">—</div>
+</nav>
+
+<nav class="bot-nav">
+  <button class="bn active" onclick="goPage('today')"><span class="bn-i">✅</span><span class="bn-l">Today</span></button>
+  <button class="bn" onclick="goPage('week')"><span class="bn-i">🗓️</span><span class="bn-l">Week</span></button>
+  <button class="bn" onclick="goPage('gym')"><span class="bn-i">🏋️</span><span class="bn-l">Gym</span></button>
+  <button class="bn" onclick="goPage('habits')"><span class="bn-i">🔁</span><span class="bn-l">Habits</span></button>
+  <button class="bn" onclick="goPage('journal')"><span class="bn-i">📓</span><span class="bn-l">Journal</span></button>
+  <button class="bn" onclick="goPage('progress')"><span class="bn-i">🏆</span><span class="bn-l">Progress</span></button>
+  <button class="bn" onclick="goPage('backup')"><span class="bn-i">💾</span><span class="bn-l">Backup</span></button>
+</nav>
+
+<div class="pages">
+
+<!-- TODAY -->
+<div class="page active" id="page-today"><div class="inner">
+  <div class="card">
+    <div class="clabel" id="today-label">Today's tasks</div>
+    <div class="row">
+      <input class="inp" id="ti-inp" placeholder="Add a task..." style="flex:1"/>
+      <button class="btn b-blue" onclick="addTodayTask()">+</button>
+    </div>
+    <div id="ti-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="clabel">📝 Quick note</div>
+    <textarea class="inp" id="quick-note" placeholder="Anything you want to remember from today..." style="min-height:70px;margin-bottom:10px"></textarea>
+    <div style="display:flex;align-items:center;gap:9px">
+      <button class="btn b-violet" style="padding:9px 16px;font-size:12px" onclick="saveQuickNote()">💾 Save</button>
+      <span class="svok" id="qn-saved">✓ Saved</span>
+    </div>
+  </div>
+</div></div>
+
+<!-- WEEK PLAN (to-do list style) -->
+<div class="page" id="page-week"><div class="inner">
+  <div class="card">
+    <div class="clabel">🗓️ This week's plan</div>
+    <div class="wk-nav">
+      <button class="btn b-ghost" style="padding:7px 13px;font-size:18px;line-height:1" onclick="shiftWk(-1)">‹</button>
+      <div class="wk-range" id="wk-range">—</div>
+      <button class="btn b-ghost" style="padding:7px 13px;font-size:18px;line-height:1" onclick="shiftWk(1)">›</button>
+    </div>
+
+    <div class="goalbox">
+      <div class="glabel">🎯 TOP GOALS FOR THE WEEK</div>
+      <textarea class="inp" id="wk-goals" placeholder="e.g. finish the EDA notebook, review 3 German lessons, hit the gym 3x..." style="min-height:60px"></textarea>
+    </div>
+
+    <div class="row">
+      <input class="inp" id="wi-inp" placeholder="Add something to the week's to-do list..." style="flex:1"/>
+      <select class="sel" id="wi-cat">
+        <option value="study">📊 Study</option><option value="work">💼 Work</option>
+        <option value="lang">🗣️ Language</option><option value="gym">💪 Health</option>
+        <option value="family">👨‍👩‍👦 Family</option><option value="other">📌 Other</option>
+      </select>
+      <button class="btn b-violet" onclick="addWeekItem()">+</button>
+    </div>
+    <div id="wk-list"></div>
+    <div class="pgwrap"><div class="pgfill" id="wkProg" style="width:0%"></div></div>
+    <div class="pgrow"><span id="wkCnt">0 / 0</span><span id="wkPct" style="color:var(--green);font-weight:700">0%</span></div>
+
+    <div class="revbox" id="revbox">
+      <div class="glabel" style="color:var(--blue)">📋 WEEKLY REVIEW</div>
+      <div id="revcontent" style="font-size:12px;color:var(--muted)">Generate a review once you've logged a few days this week.</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn b-blue" style="font-size:12px;padding:9px 14px" onclick="generateReview()">🔍 Generate review</button>
+        <button class="btn b-ghost" style="font-size:12px;padding:9px 14px;display:none" id="saveRevBtn" onclick="saveReviewToJournal()">📓 Save to journal</button>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- GYM -->
+<div class="page" id="page-gym"><div class="inner">
+  <div class="card">
+    <div class="clabel">🏋️ Today's workout</div>
+    <div class="row">
+      <button class="btn b-blue" id="gymYesBtn" onclick="setGymDone(true)" style="flex:1">✅ Trained today</button>
+      <button class="btn b-ghost" id="gymNoBtn" onclick="setGymDone(false)" style="flex:1">❌ Rest day</button>
+    </div>
+
+    <div id="gymFields" style="display:none;margin-top:10px">
+      <input class="inp" id="gym-name" placeholder="Session name (Push Day, Legs...)" style="margin-bottom:8px"/>
+      <input class="inp" id="gym-parts" placeholder="Body parts (chest, shoulders, triceps)" style="margin-bottom:10px"/>
+      <div id="gym-exercises"></div>
+      <button class="btn b-ghost" style="font-size:12px;padding:9px 14px" onclick="addExerciseBlock()">+ Add exercise</button>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <button class="btn b-violet" onclick="saveGym()">💾 Save workout</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="clabel">📈 Exercise strength log</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Ranked by estimated 1-rep max. Tap an exercise for full history.</div>
+    <div id="ex-library"></div>
+  </div>
+</div></div>
+
+<!-- HABITS -->
+<div class="page" id="page-habits"><div class="inner">
+  <div class="card">
+    <div class="clabel">🔁 Today's habits</div>
+    <div class="hgrid">
+      <div class="hi" data-h="fajr"    onclick="toggleHabit(this)"><span class="hi-ic">🌙</span><span class="hi-lb">Fajr on time</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="dhuhr"   onclick="toggleHabit(this)"><span class="hi-ic">☀️</span><span class="hi-lb">Dhuhr on time</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="asr"     onclick="toggleHabit(this)"><span class="hi-ic">🌤️</span><span class="hi-lb">Asr on time</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="maghrib" onclick="toggleHabit(this)"><span class="hi-ic">🌅</span><span class="hi-lb">Maghrib on time</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="isha"    onclick="toggleHabit(this)"><span class="hi-ic">⭐</span><span class="hi-lb">Isha on time</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="azkar_m" onclick="toggleHabit(this)"><span class="hi-ic">🕋</span><span class="hi-lb">Morning Azkar</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="azkar_e" onclick="toggleHabit(this)"><span class="hi-ic">🕌</span><span class="hi-lb">Evening Azkar</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="reading" onclick="toggleHabit(this)"><span class="hi-ic">📖</span><span class="hi-lb">Reading</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="sleep"   onclick="toggleHabit(this)"><span class="hi-ic">😴</span><span class="hi-lb">Sleep on time</span><div class="hi-bx"></div></div>
+      <div class="hi" data-h="no_porn" onclick="toggleHabit(this)"><span class="hi-ic">🚫</span><span class="hi-lb">No pornography</span><div class="hi-bx"></div></div>
+    </div>
+    <div class="pgwrap"><div class="pgfill" id="habProg" style="width:0%"></div></div>
+    <div class="pgrow"><span id="habCnt">0 / 9</span><span id="habPct" style="color:var(--green);font-weight:700">0%</span></div>
+  </div>
+
+  <div class="card">
+    <div class="clabel">📊 This week's habit tracker</div>
+    <div style="overflow-x:auto"><table class="whtbl" id="whtable"></table></div>
+    <div class="whstats" id="whstats"></div>
+  </div>
+
+  <div class="card">
+    <div class="clabel">📏 Measurable habits — today</div>
+    <div id="mh-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="clabel">🎯 Discipline score</div>
+    <div class="scorebig" id="discScore">-/10</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">Based on what you actually logged today vs. your targets — not perfection.</div>
+  </div>
+</div></div>
+
+<!-- JOURNAL -->
+<div class="page" id="page-journal"><div class="inner">
+  <div class="card">
+    <div class="clabel">📓 Journal</div>
+    <div class="jtabs">
+      <button class="jtab active" onclick="switchJTab('daily',this)">Daily</button>
+      <button class="jtab" onclick="switchJTab('reflect',this)">Reflect</button>
+      <button class="jtab" onclick="switchJTab('goals',this)">Goals</button>
+    </div>
+
+    <div class="jpage on" id="jp-daily">
+      <div class="pbox"><div class="plabel">PROMPTS</div>
+        <div class="pq">What's the best thing that happened today?</div>
+        <div class="pq">What would you like to do better tomorrow?</div>
+        <div class="pq">What did you need to be patient with yourself about today?</div>
+      </div>
+      <textarea class="inp" id="j-daily" placeholder="Write freely..." style="min-height:110px;margin-bottom:10px"></textarea>
+      <div style="display:flex;align-items:center;gap:9px">
+        <button class="btn b-violet" style="padding:9px 16px;font-size:12px" onclick="saveJ('daily')">💾 Save</button>
+        <span class="svok" id="sv-daily">✓ Saved</span>
+      </div>
+    </div>
+
+    <div class="jpage" id="jp-reflect">
+      <div class="pbox"><div class="plabel">DEEPER REFLECTION</div>
+        <div class="pq">What's actually holding me back from my goals?</div>
+        <div class="pq">If I were advising a friend, what would I tell them?</div>
+        <div class="pq">What will matter in 5 years?</div>
+      </div>
+      <textarea class="inp" id="j-reflect" placeholder="Reflect honestly..." style="min-height:110px;margin-bottom:10px"></textarea>
+      <div style="display:flex;align-items:center;gap:9px">
+        <button class="btn b-violet" style="padding:9px 16px;font-size:12px" onclick="saveJ('reflect')">💾 Save</button>
+        <span class="svok" id="sv-reflect">✓ Saved</span>
+      </div>
+    </div>
+
+    <div class="jpage" id="jp-goals">
+      <div class="pbox"><div class="plabel">GOALS</div>
+        <div class="pq">What are the 3 core goals for next month?</div>
+        <div class="pq">What's the one step that would move everything forward?</div>
+      </div>
+      <textarea class="inp" id="j-goals" placeholder="Write your goals..." style="min-height:110px;margin-bottom:10px"></textarea>
+      <div style="display:flex;align-items:center;gap:9px">
+        <button class="btn b-violet" style="padding:9px 16px;font-size:12px" onclick="saveJ('goals')">💾 Save</button>
+        <span class="svok" id="sv-goals">✓ Saved</span>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+      <div class="clabel">Past entries</div>
+      <div id="j-entries"></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- PROGRESS -->
+<div class="page" id="page-progress"><div class="inner">
+  <div class="card">
+    <div class="clabel">🏆 Level &amp; XP</div>
+    <div class="xpbar-wrap">
+      <div class="lvl-badge" id="lvlBadge">Lv 1</div>
+      <div class="xpwrap"><div class="xpfill" id="xpFill" style="width:0%"></div></div>
+    </div>
+    <div class="xptxt" id="xpTxt">0 / 100 XP</div>
+
+    <div class="streakbox">
+      <div class="streakflame">🔥</div>
+      <div>
+        <div class="streaknum" id="streakNum">0</div>
+        <div style="font-size:10.5px;color:var(--muted)">day streak — log anything (task, habit, workout, journal) to keep it alive</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="clabel">🎖️ Badges</div>
+    <div class="badgegrid" id="badgeGrid"></div>
+  </div>
+</div></div>
+
+<!-- BACKUP -->
+<div class="page" id="page-backup"><div class="inner">
+  <div class="card">
+    <div class="clabel">💾 Backup — export &amp; import</div>
+    <div style="background:var(--s3);border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid var(--border2)">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">📱 How to sync between your phone and laptop</div>
+      <div style="font-size:12px;color:var(--text2);line-height:2">
+        1. On the first device — tap <b style="color:var(--green)">Export Backup</b><br>
+        2. Send the file to yourself (WhatsApp, email, Drive/iCloud)<br>
+        3. Open it on the other device<br>
+        4. Tap <b style="color:var(--blue)">Import Backup</b> and select that file
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="btn b-violet" onclick="exportBackup()">📤 Export Backup</button>
+      <label class="btn b-blue" style="cursor:pointer;display:inline-flex;align-items:center">
+        📥 Import Backup
+        <input type="file" accept=".json" id="import-file" style="display:none" onchange="importBackup(event)"/>
+      </label>
+    </div>
+    <div class="clabel">Last 4 backups (on this device)</div>
+    <div id="bk-list"><div class="empty"><span class="empty-ic">💾</span>No backups yet</div></div>
+    <div style="margin-top:12px;padding:10px 12px;background:var(--s3);border-radius:9px;border:1px solid #ffb02020">
+      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:2px">⏰ Reminder</div>
+      <div style="font-size:12px;color:var(--text2)" id="bk-reminder">Export a backup whenever you switch devices, so your data stays in sync.</div>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /pages -->
+
+<script>
+const G = id => document.getElementById(id);
+const NOW = new Date();
+const TODAY_STR = NOW.toDateString();
+const EN_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const EN_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const EN_DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+G('navDate').textContent = `${EN_DAYS[NOW.getDay()]}, ${EN_MONTHS[NOW.getMonth()]} ${NOW.getDate()}`;
+G('today-label').textContent = `✅ ${EN_DAYS[NOW.getDay()]}'s tasks`;
+
+const JS2I = {6:0, 0:1, 1:2, 2:3, 3:4, 4:5, 5:6}; // Sat-first index
+function getSat(d){ const c=new Date(d); c.setDate(d.getDate()-JS2I[d.getDay()]); c.setHours(0,0,0,0); return c; }
+
+const LS = {
+  get(k,d=null){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch{ return d; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+};
+
+let _bt;
+function showBanner(){ const b=G('sbanner'); b.className='sbanner show saved'; clearTimeout(_bt); _bt=setTimeout(()=>b.classList.remove('show'),1400); }
+function save(k,v){ LS.set(k,v); showBanner(); }
+
+/* ── GAMIFICATION ── */
+const BADGES = [
+  {id:'first_workout', icon:'🏋️', label:'First workout', test:s=>s.stats.workouts>=1},
+  {id:'first_pr',      icon:'💥', label:'First PR', test:s=>s.stats.prs>=1},
+  {id:'pr_10',         icon:'🚀', label:'10 PRs', test:s=>s.stats.prs>=10},
+  {id:'streak_7',      icon:'🔥', label:'7-day streak', test:s=>s.streak>=7},
+  {id:'streak_30',     icon:'🌋', label:'30-day streak', test:s=>s.streak>=30},
+  {id:'journal_10',    icon:'📓', label:'10 journal entries', test:s=>s.stats.journalEntries>=10},
+  {id:'tasks_50',      icon:'✅', label:'50 tasks done', test:s=>s.stats.tasksDone>=50},
+  {id:'level_5',       icon:'⭐', label:'Reached Lv 5', test:s=>levelFromXp(s.xp).lvl>=5},
+  {id:'level_10',      icon:'👑', label:'Reached Lv 10', test:s=>levelFromXp(s.xp).lvl>=10},
+];
+
+function getGState(){
+  return LS.get('gstate', {xp:0, streak:0, lastActive:null, badges:[],
+    stats:{workouts:0, prs:0, journalEntries:0, tasksDone:0}});
+}
+function saveGState(s){ LS.set('gstate', s); }
+
+function levelFromXp(xp){
+  // level thresholds grow — lvl n needs 50*n^1.5 cumulative XP roughly
+  let lvl=1, need=100, total=0;
+  while(xp >= total+need){ total+=need; lvl++; need=Math.round(100*Math.pow(lvl,1.35)); }
+  return {lvl, into:xp-total, need};
+}
+
+function addXP(amount, reason){
+  const s = getGState();
+  const prevLvl = levelFromXp(s.xp).lvl;
+  s.xp += amount;
+  bumpStreak(s);
+  saveGState(s);
+  const newLvl = levelFromXp(s.xp).lvl;
+  showXpToast(`+${amount} XP — ${reason}`);
+  if(newLvl>prevLvl) setTimeout(()=>showXpToast(`🎉 Level up — Lv ${newLvl}!`), 900);
+  checkBadges();
+  if(G('page-progress')?.classList.contains('active')) renderProgress();
+}
+
+function bumpStreak(s){
+  const today = TODAY_STR;
+  if(s.lastActive===today) return; // already counted today
+  const y=new Date(NOW); y.setDate(y.getDate()-1);
+  if(s.lastActive===y.toDateString()) s.streak+=1;
+  else s.streak=1;
+  s.lastActive=today;
+}
+
+function bumpStat(key, by=1){
+  const s = getGState();
+  s.stats[key] = (s.stats[key]||0)+by;
+  saveGState(s);
+}
+
+function checkBadges(){
+  const s = getGState();
+  let changed=false;
+  BADGES.forEach(b=>{
+    if(!s.badges.includes(b.id) && b.test(s)){ s.badges.push(b.id); changed=true;
+      setTimeout(()=>showXpToast(`🎖️ Badge unlocked — ${b.label}`), 1400); }
+  });
+  if(changed) saveGState(s);
+}
+
+let _xt;
+function showXpToast(msg){
+  let el = G('xpToast');
+  if(!el){ el=document.createElement('div'); el.id='xpToast'; el.className='toast-xp'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_xt);
+  _xt=setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+function renderProgress(){
+  const s = getGState();
+  const L = levelFromXp(s.xp);
+  G('lvlBadge').textContent = `Lv ${L.lvl}`;
+  G('xpFill').style.width = Math.round((L.into/L.need)*100)+'%';
+  G('xpTxt').textContent = `${L.into} / ${L.need} XP · ${s.xp} total`;
+  G('streakNum').textContent = s.streak;
+  G('badgeGrid').innerHTML = BADGES.map(b=>{
+    const on = s.badges.includes(b.id);
+    return `<div class="badge ${on?'unlocked':''}"><span class="bi">${b.icon}</span><span class="bl">${b.label}</span></div>`;
+  }).join('');
+}
+
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  G('page-'+id).classList.add('active');
+  const order=['today','week','gym','habits','journal','progress','backup'];
+  document.querySelectorAll('.nl').forEach((b,i)=>b.classList.toggle('active', order[i]===id));
+  document.querySelectorAll('.bn').forEach((b,i)=>b.classList.toggle('active', order[i]===id));
+  if (id==='week') { renderWkRange(); renderWeekList(); loadGoals(); }
+  if (id==='gym') { renderGymToday(); renderExerciseLibrary(); }
+  if (id==='habits') { renderWeekHabits(); renderMeasurableHabits(); updateDisciplineScore(); }
+  if (id==='progress') { renderProgress(); }
+  if (id==='backup') { renderBkList(); }
+}
+
+/* ── TODAY TASKS ── */
+let todayTasks = LS.get('td_'+TODAY_STR, []);
+function addTodayTask(){
+  const inp=G('ti-inp'), txt=inp.value.trim(); if(!txt) return;
+  todayTasks.push({txt,done:false,id:Date.now()});
+  save('td_'+TODAY_STR, todayTasks); renderTodayTasks(); inp.value='';
+}
+function toggleTT(id){ const t=todayTasks.find(t=>t.id===id); if(!t) return; t.done=!t.done; save('td_'+TODAY_STR,todayTasks); renderTodayTasks();
+  if(t.done){ addXP(5,'task done'); bumpStat('tasksDone'); } }
+function delTT(id){ todayTasks=todayTasks.filter(t=>t.id!==id); save('td_'+TODAY_STR,todayTasks); renderTodayTasks(); }
+function renderTodayTasks(){
+  const el=G('ti-list');
+  if(!todayTasks.length){ el.innerHTML='<div class="empty"><span class="empty-ic">🎯</span>Add your tasks for today</div>'; return; }
+  el.innerHTML=todayTasks.map(t=>`
+    <div class="titem">
+      <div class="tchk ${t.done?'done':''}" onclick="toggleTT(${t.id})"></div>
+      <span class="ttxt ${t.done?'done':''}">${t.txt}</span>
+      <button class="tdel" onclick="delTT(${t.id})">✕</button>
+    </div>`).join('');
+}
+renderTodayTasks();
+G('ti-inp').addEventListener('keydown', e=>{ if(e.key==='Enter') addTodayTask(); });
+
+/* quick note */
+const savedNote = LS.get('note_'+TODAY_STR,'');
+if (savedNote) G('quick-note').value = savedNote;
+function saveQuickNote(){
+  save('note_'+TODAY_STR, G('quick-note').value.trim());
+  const s=G('qn-saved'); s.style.display='inline'; setTimeout(()=>s.style.display='none',2000);
+}
+
+/* ── WEEK PLAN (single flat to-do list per week) ── */
+let wkOffset = 0;
+function shiftWk(dir){ wkOffset+=dir; renderWkRange(); renderWeekList(); loadGoals(); }
+function getViewSat(){ const s=new Date(getSat(NOW)); s.setDate(s.getDate()+wkOffset*7); return s; }
+function wkKey(){ return 'wk_'+getViewSat().toDateString(); }
+
+function renderWkRange(){
+  const s=getViewSat(); const f=new Date(s); f.setDate(s.getDate()+6);
+  const lbl = wkOffset===0?'this week':wkOffset>0?`in ${wkOffset} week${wkOffset>1?'s':''}`:`${Math.abs(wkOffset)} week${Math.abs(wkOffset)>1?'s':''} ago`;
+  G('wk-range').textContent = `${EN_MONTHS[s.getMonth()]} ${s.getDate()} → ${EN_MONTHS[f.getMonth()]} ${f.getDate()} (${lbl})`;
+}
+
+function loadGoals(){ G('wk-goals').value = LS.get(wkKey()+'_goals',''); }
+G('wk-goals').addEventListener('input', ()=>{ clearTimeout(window._gt); window._gt=setTimeout(()=>save(wkKey()+'_goals', G('wk-goals').value),500); });
+
+const WCAT = {
+  study:{l:'📊 Study',c:'var(--blue)'}, work:{l:'💼 Work',c:'var(--gold)'},
+  lang:{l:'🗣️ Language',c:'var(--violet)'}, gym:{l:'💪 Health',c:'var(--green)'},
+  family:{l:'👨‍👩‍👦 Family',c:'var(--pink)'}, other:{l:'📌 Other',c:'var(--muted)'},
+};
+function weekListKey(){ return wkKey()+'_todo'; }
+function addWeekItem(){
+  const inp=G('wi-inp'), txt=inp.value.trim(); if(!txt) return;
+  const list=LS.get(weekListKey(),[]);
+  list.push({txt,cat:G('wi-cat').value,done:false,id:Date.now()});
+  save(weekListKey(), list); renderWeekList(); inp.value='';
+}
+function toggleWI(id){ const list=LS.get(weekListKey(),[]); const it=list.find(x=>x.id===id); if(!it) return; it.done=!it.done; save(weekListKey(),list); renderWeekList();
+  if(it.done){ addXP(8,'weekly goal done'); bumpStat('tasksDone'); } }
+function delWI(id){ const list=LS.get(weekListKey(),[]).filter(x=>x.id!==id); save(weekListKey(),list); renderWeekList(); }
+function renderWeekList(){
+  const el=G('wk-list'); const list=LS.get(weekListKey(),[]);
+  if(!list.length){
+    el.innerHTML='<div class="empty"><span class="empty-ic">🗓️</span>Add what you want to get done this week</div>';
+  } else {
+    el.innerHTML=list.map(it=>{
+      const m=WCAT[it.cat]||WCAT.other;
+      return `<div class="titem" style="border-left-color:${m.c}">
+        <div class="tchk ${it.done?'done':''}" onclick="toggleWI(${it.id})"></div>
+        <span class="ttxt ${it.done?'done':''}">${it.txt}</span>
+        <span class="wtag" style="background:${m.c}15;color:${m.c}">${m.l}</span>
+        <button class="tdel" onclick="delWI(${it.id})">✕</button>
+      </div>`;
+    }).join('');
+  }
+  const done=list.filter(x=>x.done).length, total=list.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  G('wkProg').style.width=pct+'%';
+  G('wkCnt').textContent=`${done} / ${total}`;
+  G('wkPct').textContent=pct+'%';
+}
+
+/* ── WEEKLY REVIEW (chunked per week) ── */
+let lastReviewText = '';
+function generateReview(){
+  const sat = getViewSat();
+  const days = Array.from({length:7},(_,i)=>{ const d=new Date(sat); d.setDate(sat.getDate()+i); return d; });
+  const dayKeys = days.map(d=>d.toDateString());
+
+  // gym stats
+  let sessions=0, prNames=[];
+  const seenEx = new Set();
+  dayKeys.forEach(dk=>{
+    const e = LS.get('gym_'+dk, null);
+    if(e && e.done===true){
+      sessions++;
+      (e.exercises||[]).forEach(ex=>{
+        if(seenEx.has(ex.name.toLowerCase())) return;
+        seenEx.add(ex.name.toLowerCase());
+        const hist = allExerciseInstancesG(ex.name, dk);
+        const cur = bestSetE1RM(ex.sets);
+        const prevBest = Math.max(0, ...hist.map(h=>h.e1rm));
+        if(cur>prevBest && hist.length) prNames.push(ex.name);
+      });
+    }
+  });
+
+  // discipline / habits
+  let habitRatios=[], loggedDays=0;
+  dayKeys.forEach(dk=>{
+    const h = LS.get('h_'+dk, null);
+    const mh = LS.get('mh_'+dk, null);
+    if(!h && !mh) return;
+    loggedDays++;
+    const rs=[];
+    if(h){ let done=0,total=0; H_DEF.forEach(([k])=>{ total++; if(h[k]) done++; }); if(total) rs.push(done/total); }
+    if(mh){ MH_DEF.forEach(m=>{ const v=mh[m.id]; if(v===undefined) return;
+      rs.push(m.type==='min'?Math.min(1,v/m.target):(v<=0?1:Math.min(1,m.target/v))); }); }
+    if(rs.length) habitRatios.push(rs.reduce((a,b)=>a+b,0)/rs.length);
+  });
+  const avgDisc = habitRatios.length ? (habitRatios.reduce((a,b)=>a+b,0)/habitRatios.length*10) : null;
+
+  // weakest habit across the week
+  const tally={}; H_DEF.forEach(([k])=>tally[k]={y:0,n:0});
+  dayKeys.forEach(dk=>{ const h=LS.get('h_'+dk,null); if(!h) return;
+    H_DEF.forEach(([k])=>{ if(h[k]===true) tally[k].y++; else tally[k].n++; }); });
+  let worst=null, worstRate=1.01;
+  H_DEF.forEach(([k,lbl])=>{ const t=tally[k]; const total=t.y+t.n; if(total>=2){ const rate=t.y/total; if(rate<worstRate){worstRate=rate; worst=lbl;} } });
+
+  // weekly to-do completion
+  const list = LS.get(weekListKey(), []);
+  const doneCount = list.filter(x=>x.done).length;
+  const pct = list.length ? Math.round(doneCount/list.length*100) : null;
+
+  const lines = [];
+  lines.push(`<div class="revline"><b>${sessions}</b> gym session${sessions!==1?'s':''} logged this week</div>`);
+  lines.push(`<div class="revline">${prNames.length ? '💥 PRs: <b>'+[...new Set(prNames)].join(', ')+'</b>' : 'No new PRs this week'}</div>`);
+  lines.push(`<div class="revline">Avg discipline score: <b>${avgDisc!==null?avgDisc.toFixed(1)+'/10':'—'}</b> (${loggedDays} day${loggedDays!==1?'s':''} logged)</div>`);
+  lines.push(`<div class="revline">Weakest habit: <b>${worst||'not enough data'}</b></div>`);
+  lines.push(`<div class="revline">Weekly to-dos: <b>${pct!==null?pct+'% ('+doneCount+'/'+list.length+')':'none set'}</b></div>`);
+
+  const priorities=[];
+  if(worst) priorities.push(`Focus on "${worst}" — weakest habit this week`);
+  if(sessions<3) priorities.push('Get more training sessions in next week');
+  if(pct!==null && pct<60) priorities.push('Close out more of your weekly to-do list');
+  if(priorities.length<3) priorities.push('Stay consistent — don\'t break the streak');
+  lines.push(`<div class="revline" style="margin-top:6px"><b>Next week:</b><br>${priorities.slice(0,3).map((p,i)=>(i+1)+'. '+p).join('<br>')}</div>`);
+
+  G('revcontent').innerHTML = lines.join('');
+  lastReviewText = `Weekly Review (${EN_MONTHS[sat.getMonth()]} ${sat.getDate()}):\n`
+    + `- ${sessions} gym session(s). PRs: ${[...new Set(prNames)].join(', ')||'none'}\n`
+    + `- Avg discipline score: ${avgDisc!==null?avgDisc.toFixed(1)+'/10':'—'}\n`
+    + `- Weakest habit: ${worst||'not enough data'}\n`
+    + `- Weekly to-dos: ${pct!==null?pct+'%':'none set'}\n`
+    + `- Priorities for next week: ${priorities.slice(0,3).join(' | ')}`;
+  const btn = G('saveRevBtn'); btn.style.display='inline-block';
+}
+function saveReviewToJournal(){
+  if(!lastReviewText) return;
+  journal.unshift({type:'review', txt:lastReviewText, date:NOW.toLocaleDateString('en-US'), ts:Date.now()});
+  if(journal.length>150) journal=journal.slice(0,150);
+  save('journal', journal);
+  renderJournal();
+  addXP(10, 'weekly review saved'); bumpStat('journalEntries');
+}
+
+/* ── HABITS ── */
+const H_DEF = [
+  ['fajr','🌙 Fajr on time'],['dhuhr','☀️ Dhuhr on time'],['asr','🌤️ Asr on time'],
+  ['maghrib','🌅 Maghrib on time'],['isha','⭐ Isha on time'],
+  ['azkar_m','🕋 Morning Azkar'],['azkar_e','🕌 Evening Azkar'],
+  ['reading','📖 Reading'],['sleep','😴 Sleep on time'],['no_porn','🚫 No pornography'],
+];
+let habits = LS.get('h_'+TODAY_STR, {});
+function toggleHabit(el){
+  const wasOn = !!habits[el.dataset.h];
+  habits[el.dataset.h] = !habits[el.dataset.h];
+  save('h_'+TODAY_STR, habits); renderHabits();
+  if(!wasOn && habits[el.dataset.h]) addXP(3,'habit checked');
+  updateDisciplineScore();
+}
+function renderHabits(){
+  const items = document.querySelectorAll('.hi');
+  let done=0;
+  items.forEach(el=>{
+    if (habits[el.dataset.h]) { el.classList.add('done'); done++; }
+    else el.classList.remove('done');
+  });
+  const pct = Math.round(done/items.length*100);
+  G('habProg').style.width = pct+'%';
+  G('habCnt').textContent = `${done} / ${items.length}`;
+  G('habPct').textContent = pct+'%';
+}
+renderHabits();
+
+/* ── MEASURABLE HABITS ── */
+const MH_DEF = [
+  {id:'sleep_h',  label:'Sleep',           type:'min', target:7,   unit:'hrs'},
+  {id:'protein',  label:'Protein',         type:'max', target:120, unit:'g'},
+  {id:'water',    label:'Water',           type:'min', target:3,   unit:'L'},
+  {id:'study_h',  label:'Focused study',   type:'min', target:3,   unit:'hrs'},
+  {id:'cardio',   label:'Football/cardio', type:'min', target:30,  unit:'min'},
+  {id:'social',   label:'Social media',    type:'max', target:2,   unit:'hrs'},
+];
+let mHabits = LS.get('mh_'+TODAY_STR, {});
+function renderMeasurableHabits(){
+  const el = G('mh-grid'); if(!el) return;
+  el.innerHTML = MH_DEF.map(h=>`
+    <div class="mhrow">
+      <div>
+        <div class="ml">${h.label}</div>
+        <div class="mt">${h.type==='max'?'limit':'target'} ${h.target} ${h.unit}</div>
+      </div>
+      <input type="number" step="0.5" class="inp" id="mh-${h.id}" value="${mHabits[h.id]!==undefined?mHabits[h.id]:''}" placeholder="0">
+      <div class="mu">${h.unit}</div>
+      <div class="mfill"><div class="mfill-b" id="mhf-${h.id}"></div></div>
+    </div>`).join('');
+  MH_DEF.forEach(h=>{
+    const inp = G('mh-'+h.id);
+    inp.addEventListener('input', ()=>{
+      const v = parseFloat(inp.value);
+      const hadValue = mHabits[h.id]!==undefined;
+      mHabits[h.id] = isNaN(v)?undefined:v;
+      save('mh_'+TODAY_STR, mHabits);
+      updateMhFill(h);
+      updateDisciplineScore();
+      if(!hadValue && !isNaN(v)) addXP(3,h.label+' logged');
+    });
+    updateMhFill(h);
+  });
+}
+function mhRatio(h){
+  const v = mHabits[h.id];
+  if(v===undefined || isNaN(v)) return null;
+  if(h.type==='min') return Math.max(0, Math.min(1, v/h.target));
+  if(v<=0) return 1;
+  return Math.max(0, Math.min(1, h.target/v));
+}
+function updateMhFill(h){
+  const bar = G('mhf-'+h.id); if(!bar) return;
+  const r = mhRatio(h);
+  bar.style.width = (r!==null?r*100:0)+'%';
+  bar.style.background = r!==null && r>=1 ? 'var(--green)' : 'var(--blue)';
+}
+function updateDisciplineScore(){
+  const el = G('discScore'); if(!el) return;
+  const ratios = [];
+  const items = document.querySelectorAll('.hi');
+  if(items.length){
+    let done=0; items.forEach(e=>{ if(habits[e.dataset.h]) done++; });
+    ratios.push(done/items.length);
+  }
+  MH_DEF.forEach(h=>{ const r=mhRatio(h); if(r!==null) ratios.push(r); });
+  const gymToday = LS.get('gym_'+TODAY_STR, null);
+  if(gymToday && gymToday.done!==null) ratios.push(gymToday.done===true?1:0);
+  if(!ratios.length){ el.textContent='-/10'; return; }
+  const avg = ratios.reduce((a,b)=>a+b,0)/ratios.length;
+  el.textContent = (Math.round(avg*100)/10).toFixed(1)+'/10';
+}
+
+function renderWeekHabits(){
+  const sat = getSat(NOW);
+  const days = Array.from({length:7},(_,i)=>{ const d=new Date(sat); d.setDate(sat.getDate()+i); return d; });
+
+  let h = `<thead><tr><td style="font-size:10px;color:var(--muted);padding:3px 6px">Habit</td>`;
+  days.forEach(d=>{
+    const t = d.toDateString()===TODAY_STR;
+    h += `<td style="text-align:center;font-size:10px;padding:3px;color:${t?'var(--blue)':'var(--muted)'};font-weight:${t?700:400}">${EN_DAYS_SHORT[d.getDay()]}<br><span style="font-size:9px;opacity:.7">${d.getDate()}</span></td>`;
+  });
+  h += '</tr></thead><tbody>';
+
+  H_DEF.forEach(([key,lbl])=>{
+    h += `<tr><td style="font-size:10px;color:var(--text2);padding:3px 6px;white-space:nowrap">${lbl}</td>`;
+    days.forEach(d=>{
+      const done = !!(LS.get('h_'+d.toDateString(),{})[key]);
+      h += `<td><div class="whcell ${done?'done':''}">${done?'✓':''}</div></td>`;
+    });
+    h += '</tr>';
+  });
+  h += '</tbody>';
+  G('whtable').innerHTML = h;
+
+  let s='';
+  H_DEF.forEach(([key,lbl])=>{
+    let cnt=0; days.forEach(d=>{ if(LS.get('h_'+d.toDateString(),{})[key]) cnt++; });
+    const pct=Math.round(cnt/7*100);
+    const col=pct>=70?'var(--green)':pct>=40?'var(--gold)':'var(--red)';
+    s+=`<div class="wstat"><div class="wstat-p" style="color:${col}">${pct}%</div><div class="wstat-l">${lbl}</div></div>`;
+  });
+  G('whstats').innerHTML=s;
+}
+
+/* ── GYM ── */
+let gymDoneState = null;
+let gymExCounter = 0;
+function setGymDone(val){
+  gymDoneState = val;
+  G('gymYesBtn').className = 'btn '+(val===true?'b-blue':'b-ghost');
+  G('gymNoBtn').className = 'btn '+(val===false?'b-blue':'b-ghost');
+  G('gymFields').style.display = val ? 'block' : 'none';
+}
+function addExerciseBlock(prefillName){
+  const id = 'gex_'+(gymExCounter++);
+  const div = document.createElement('div');
+  div.className = 'exb';
+  div.id = id;
+  div.innerHTML = `
+    <div class="exb-head">
+      <input class="inp" placeholder="Exercise name (Bench Press...)" value="${prefillName||''}" oninput="" />
+      <button class="btn b-ghost" style="padding:6px 10px;font-size:11px" onclick="document.getElementById('${id}').remove()">✕</button>
+    </div>
+    <div class="glist"></div>
+    <button class="btn b-ghost" style="font-size:11px;padding:7px 12px;margin-top:2px" onclick="addSetRowG('${id}')">+ Set</button>
+    <input class="inp" placeholder="Notes (pain, difficulty...)" style="margin-top:8px;margin-bottom:0" />
+  `;
+  G('gym-exercises').appendChild(div);
+  addSetRowG(id);
+}
+function addSetRowG(exId){
+  const list = document.querySelector(`#${exId} .glist`);
+  const idx = list.children.length+1;
+  const row = document.createElement('div');
+  row.className = 'setrow';
+  row.innerHTML = `
+    <div class="sidx">${idx}</div>
+    <input type="number" class="inp gw" placeholder="kg">
+    <input type="number" class="inp gr" placeholder="reps">
+    <input type="text" class="inp grir" placeholder="RIR">
+    <button onclick="this.closest('.setrow').remove()">✕</button>
+  `;
+  list.appendChild(row);
+}
+function collectGymExercises(){
+  const blocks = document.querySelectorAll('.exb');
+  const out = [];
+  blocks.forEach(b=>{
+    const name = b.querySelector('.exb-head .inp').value.trim();
+    if(!name) return;
+    const sets = [];
+    b.querySelectorAll('.setrow').forEach(row=>{
+      const w = row.querySelector('.gw').value, r = row.querySelector('.gr').value, rir = row.querySelector('.grir').value;
+      if(w||r) sets.push({weight:w?parseFloat(w):null, reps:r?parseInt(r):null, rir:rir||null});
+    });
+    const allInputs = b.querySelectorAll('input');
+    const notes = allInputs[allInputs.length-1].value.trim();
+    out.push({name, sets, notes});
+  });
+  return out;
+}
+function e1rm(w,r){ if(!w||!r) return 0; return w*(1+r/30); }
+function bestSetE1RM(sets){ return Math.max(0, ...(sets||[]).map(s=>e1rm(s.weight,s.reps))); }
+
+function renderGymToday(){
+  const entry = LS.get('gym_'+TODAY_STR, null);
+  gymExCounter = 0;
+  G('gym-exercises').innerHTML = '';
+  if(!entry || entry.done===null){ setGymDone(null); G('gymYesBtn').className='btn b-ghost'; G('gymNoBtn').className='btn b-ghost'; return; }
+  setGymDone(entry.done);
+  if(entry.done===true){
+    G('gym-name').value = entry.name||'';
+    G('gym-parts').value = entry.bodyParts||'';
+    (entry.exercises||[]).forEach(ex=>{
+      addExerciseBlock(ex.name);
+      const blocks = document.querySelectorAll('.exb');
+      const block = blocks[blocks.length-1];
+      block.querySelector('.glist').innerHTML='';
+      (ex.sets||[]).forEach((s,i)=>{
+        addSetRowG(block.id);
+        const row = block.querySelectorAll('.setrow')[i];
+        row.querySelector('.gw').value = s.weight??'';
+        row.querySelector('.gr').value = s.reps??'';
+        row.querySelector('.grir').value = s.rir??'';
+      });
+      const allInputs = block.querySelectorAll('input');
+      allInputs[allInputs.length-1].value = ex.notes||'';
+    });
+  }
+}
+
+function allExerciseNamesG(){
+  const set = new Set();
+  Object.keys(localStorage).filter(k=>k.startsWith('gym_')).forEach(k=>{
+    const e = LS.get(k, null);
+    if(e && e.done===true) (e.exercises||[]).forEach(ex=>set.add(ex.name));
+  });
+  return [...set];
+}
+function allExerciseInstancesG(name, beforeKey){
+  const keys = Object.keys(localStorage).filter(k=>k.startsWith('gym_')).map(k=>k.replace('gym_','')).sort();
+  const out=[];
+  keys.forEach(key=>{
+    if(beforeKey && key>=beforeKey) return;
+    const e = LS.get('gym_'+key, null);
+    if(!e || e.done!==true) return;
+    (e.exercises||[]).forEach(ex=>{
+      if(ex.name.trim().toLowerCase()===name.trim().toLowerCase()){
+        out.push({date:key, sets:ex.sets||[], e1rm:bestSetE1RM(ex.sets)});
+      }
+    });
+  });
+  return out;
+}
+function cssSafeG(s){ return s.replace(/[^a-zA-Z0-9]/g,'_'); }
+function renderExerciseLibrary(){
+  const names = allExerciseNamesG();
+  const el = G('ex-library');
+  if(!names.length){ el.innerHTML = '<div class="empty"><span class="empty-ic">🏋️</span>No exercises logged yet</div>'; return; }
+  const rows = names.map(name=>{
+    const inst = allExerciseInstancesG(name, null);
+    const best = Math.max(0, ...inst.map(i=>i.e1rm));
+    const last = inst[inst.length-1];
+    return {name, count:inst.length, best, lastDate: last?last.date:'—'};
+  }).sort((a,b)=>b.best-a.best);
+  el.innerHTML = rows.map(r=>`
+    <div class="exlist-item" data-name="${r.name}">
+      <div><div class="en">${r.name}</div><div class="em">${r.count} session${r.count!==1?'s':''} · last ${r.lastDate}</div></div>
+      <div class="eb">${r.best.toFixed(1)}kg</div>
+    </div>
+    <div class="exhist" id="exh-${cssSafeG(r.name)}"></div>
+  `).join('');
+  el.querySelectorAll('.exlist-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      const name = item.dataset.name;
+      const hist = G('exh-'+cssSafeG(name));
+      hist.classList.toggle('on');
+      if(hist.classList.contains('on')){
+        const inst = allExerciseInstancesG(name, null);
+        let maxSoFar=0;
+        const rowsHtml = inst.map(i=>{
+          const setsStr = i.sets.map(s=>`${s.weight??'-'}×${s.reps??'-'}`).join(', ');
+          const isPR = i.e1rm>maxSoFar && i.e1rm>0;
+          if(i.e1rm>maxSoFar) maxSoFar=i.e1rm;
+          return `<tr><td>${i.date}</td><td>${setsStr}</td><td>${i.e1rm.toFixed(1)}kg${isPR?'<span class="prbadge">PR</span>':''}</td></tr>`;
+        }).join('');
+        hist.innerHTML = `<table><tr><th>Date</th><th>Sets</th><th>e1RM</th></tr>${rowsHtml}</table>`;
+      }
+    });
+  });
+}
+
+function saveGym(){
+  const entry = gymDoneState===true ? {
+    done:true,
+    name: G('gym-name').value.trim(),
+    bodyParts: G('gym-parts').value.trim(),
+    exercises: collectGymExercises()
+  } : {done: gymDoneState===false ? false : null};
+  save('gym_'+TODAY_STR, entry);
+
+  if(entry.done===true){
+    // PR check for XP
+    let prCount = 0;
+    (entry.exercises||[]).forEach(ex=>{
+      const hist = allExerciseInstancesG(ex.name, TODAY_STR);
+      const cur = bestSetE1RM(ex.sets);
+      const prevBest = Math.max(0, ...hist.map(h=>h.e1rm));
+      if(cur>prevBest && hist.length) prCount++;
+    });
+    addXP(15, 'workout logged');
+    bumpStat('workouts');
+    if(prCount){ addXP(20*prCount, prCount+' PR'+(prCount>1?'s':'')); bumpStat('prs', prCount); }
+  }
+  updateDisciplineScore();
+  renderExerciseLibrary();
+}
+let journal = LS.get('journal', []);
+function switchJTab(id,btn){
+  document.querySelectorAll('.jtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.jpage').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('active'); G('jp-'+id).classList.add('on');
+}
+const J_TA={daily:'j-daily',reflect:'j-reflect',goals:'j-goals'};
+const J_NM={daily:'Daily',reflect:'Reflect',goals:'Goals',review:'Review'};
+function saveJ(type){
+  const ta=G(J_TA[type]), txt=ta.value.trim(); if(!txt) return;
+  journal.unshift({type,txt,date:NOW.toLocaleDateString('en-US'),ts:Date.now()});
+  if (journal.length>150) journal=journal.slice(0,150);
+  save('journal',journal); ta.value='';
+  const s=G('sv-'+type); s.style.display='inline'; setTimeout(()=>s.style.display='none',2000);
+  renderJournal();
+  addXP(10,'journal entry'); bumpStat('journalEntries');
+}
+function delJ(i){ journal.splice(i,1); save('journal',journal); renderJournal(); }
+function renderJournal(){
+  const el=G('j-entries');
+  if(!journal.length){ el.innerHTML='<div class="empty"><span class="empty-ic">📓</span>No entries yet</div>'; return; }
+  el.innerHTML=journal.slice(0,40).map((j,i)=>`
+    <div class="jentry">
+      <div class="jhead">
+        <span class="jdate">${j.date}</span>
+        <span class="jtype">${J_NM[j.type]||j.type}</span>
+        <button class="jdel" onclick="delJ(${i})">✕</button>
+      </div>
+      <div class="jtext">${j.txt}</div>
+    </div>`).join('');
+}
+renderJournal();
+
+/* ── BACKUP: export / import ── */
+function getAllData(){
+  const d={};
+  for (let i=0; i<localStorage.length; i++){
+    const k=localStorage.key(i);
+    if (k){ try{ d[k]=JSON.parse(localStorage.getItem(k)); }catch{ d[k]=localStorage.getItem(k); } }
+  }
+  return d;
+}
+function exportBackup(){
+  const data=getAllData();
+  const n=new Date();
+  const fn=`yousef_${n.getFullYear()}-${n.getMonth()+1}-${n.getDate()}.json`;
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=fn; a.click();
+  URL.revokeObjectURL(url);
+  let recs=LS.get('bk_recs',[]);
+  recs.unshift({date:n.toLocaleDateString('en-US'),fn,size:Math.round(blob.size/1024)+'KB',ts:n.getTime()});
+  recs=recs.slice(0,4);
+  LS.set('bk_recs',recs); renderBkList(); showBanner();
+}
+function importBackup(e){
+  const file=e.target.files[0]; if (!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try {
+      const data=JSON.parse(ev.target.result);
+      Object.entries(data).forEach(([k,v])=>{ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} });
+      showBanner();
+      setTimeout(()=>{ refreshAll(); alert('✅ Import successful!'); }, 300);
+    } catch { alert('❌ That file could not be read'); }
+  };
+  r.readAsText(file);
+  e.target.value='';
+}
+function renderBkList(){
+  const el=G('bk-list'), recs=LS.get('bk_recs',[]);
+  if (!recs.length){ el.innerHTML='<div class="empty"><span class="empty-ic">💾</span>No backups yet</div>'; return; }
+  el.innerHTML=recs.map((r,i)=>`
+    <div class="bkitem">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${r.date}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${r.fn}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${r.size||'—'}</div>
+      ${i===0?'<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:#00e5a015;color:var(--green);font-weight:700">latest</span>':''}
+    </div>`).join('');
+  const last=recs[0]?.ts||0;
+  const days = last ? Math.floor((Date.now()-last)/864e5) : null;
+  const rem=G('bk-reminder');
+  if (days===null) { rem.textContent='Export a backup whenever you switch devices, so your data stays in sync.'; }
+  else if (days>=14) { rem.innerHTML=`<span style="color:var(--red)">⚠️ Last backup was ${days} days ago — export a fresh one before switching devices.</span>`; }
+  else { rem.textContent=`Last backup: ${days} day${days===1?'':'s'} ago.`; }
+}
+
+function refreshAll(){
+  todayTasks = LS.get('td_'+TODAY_STR, []);
+  journal    = LS.get('journal', []);
+  habits     = LS.get('h_'+TODAY_STR, {});
+  mHabits    = LS.get('mh_'+TODAY_STR, {});
+  const savedNote2 = LS.get('note_'+TODAY_STR,'');
+  G('quick-note').value = savedNote2;
+  renderTodayTasks();
+  renderJournal();
+  renderHabits();
+  renderMeasurableHabits();
+  updateDisciplineScore();
+  renderGymToday();
+  renderExerciseLibrary();
+  renderWkRange(); renderWeekList(); loadGoals();
+  renderWeekHabits();
+  renderBkList();
+  renderProgress();
+}
+
+/* init */
+renderWkRange(); renderWeekList(); loadGoals();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
